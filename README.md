@@ -1,78 +1,80 @@
-# Run.Ai event-router 
-This repo is a wrapper chart of [kubernetes-event-exporter](https://github.com/resmoio/kubernetes-event-exporter) open source project configured specifically to trigger alerts from Run.Ai cluster. 
+# Run.Ai event-router
 
-> **Note**: Event router currently is configured out of the box only for parsing Run.ai scheduler events to slack
+The Run.Ai event-router repository is a wrapper chart of [kubernetes-event-exporter](https://github.com/resmoio/kubernetes-event-exporter) open source project configured specifically to trigger alerts from Run.Ai cluster.
 
-## Configure slack notifications
+> **Note**
+> 
+> The Event router currently is configured out of the box only for parsing Run.ai scheduler events to Slack.
 
-### Configuring the slack app
-The slack app is used to trigger notifications to a channel and to generate auth token to the event-router.
-You can create a new slack app [here](https://api.slack.com/apps).
+## Configure Slack notifications
 
-After pressing on the create new app button, you should have the option to create the app from an `app manifest`.
-Copy the following slack manifest definition in order to create `runai-event-router-app`:
-```yaml
-display_information:
-  name: runai-event-router
-  description: This app is used by runai-event-router for sending notifications through slack
-  background_color: "#141f40"
-features:
-  bot_user:
-    display_name: runai-event-router-app
-    always_online: false
-oauth_config:
-  scopes:
-    bot:
-      - chat:write
-      - incoming-webhook
-      - chat:write.public
-settings:
-  org_deploy_enabled: false
-  socket_mode_enabled: false
-  token_rotation_enabled: false
+To configure Slack notifications:
 
-```
+1. Create a new slack app [here](https://api.slack.com/apps). The slack app is used to trigger notifications to a channel and to generate auth token to the event-router.
 
-After creating your app go to the "**OAuth & Permissions**" section in your app and grab the `Bot User OAuth Token`, in the following step paste the token in the values.yaml.
+   After pressing on the create new app button, you should have the option to create the app from an `app manifest`.
 
-> **Note** In order to create the slack app without a manifest you can follow slack docs: [guide to creating Slack apps with bot tokens](https://api.slack.com/authentication/basics). 
+2. Copy the following slack manifest definition in order to create `runai-event-router-app`:
 
-### Clone the repository and edit the `values.yaml` file
-```yaml
-runaiProjects: 
-  - my_runai_project
+    ```yaml
+    display_information:
+      name: runai-event-router
+      description: This app is used by runai-event-router for sending notifications through slack
+      background_color: "#141f40"
+    features:
+      bot_user:
+        display_name: runai-event-router-app
+        always_online: false
+    oauth_config:
+      scopes:
+        bot:
+          - chat:write
+          - incoming-webhook
+          - chat:write.public
+    settings:
+      org_deploy_enabled: false
+      socket_mode_enabled: false
+      token_rotation_enabled: false
+    ```
 
-clusterName: ""
+    After creating your app go to the "**OAuth & Permissions**" section in your app and grab the `Bot User OAuth Token`, in the following step paste the token in the values.yaml.
 
-slack:
-  enabled: true
-  apiToken: ""
-  channel: ""
-```
+> **Note**
+> 
+> In order to create the slack app without a manifest you can follow slack docs: [guide to creating Slack apps with bot tokens](https://api.slack.com/authentication/basics).
 
-`runaiProjects` - Projects listed here will set notifications, regex pattern is supported `.*` will grep all etc'...
+3. Clone the Run.Ai event-router repository and edit the `values.yaml` file.
 
-`clusterName` - Identifier for the cluster to show in the notifications
+    ```yaml
+    runaiProjects: 
+      - my_runai_project
+    
+    clusterName: ""
+    
+    slack:
+      enabled: true
+      apiToken: ""
+      channel: ""
+    ```
 
-**slack**
+    **runaiProjects**&mdash;projects listed here will set notifications, Use the regex pattern `.*` to find all the projects with the same starting name.
 
-`enabled` - Enable slack integration
+    **clusterName**&mdash;name of the cluster to show in the Slack notifications.
 
-`apiToken` - Slack bot token, configured with '**chat:write**'
-permissions. (see previous section)
+    **slack**
 
+      `enabled`&mdash;Enable slack integration
+  
+      `apiToken`&mdash;Slack bot token, configured with '**chat:write**'
+      permissions. (see previous section)
+  
+      `channel`&mdash;A destination channel **'runai-notifications'** a direct message '**@bob.marly**' or dynamic by setting '**pod-project**'.
 
-`channel` - A destination channel **'runai-notifications'** a direct message '**@bob.marly**' or dynamic by setting '**pod-project**'.
+      If the value of `channel` is set to pod-project, the event router will try to send the notification by tagging '**@project**' where project is taken from the 'project' label attached to your pod by runai.
 
-> If the value of `channel` is set to pod-project, the event router will try to send the notification by tagging '**@project**' where project is taken from the 'project' label attached to your pod by runai.
+4. After configuring the `values.yaml` file run the following commands to deploy the chart:
 
-### Deploy the chart
-After configuring the values file you can run the following commands in order to deploy the chart:
-```sh
-chmod +x post-process.sh
-helm install runai-event-router . -n runai-monitoring --create-namespace --post-renderer ./post-process.sh
-``` 
-
-### Checkout your channel
-![slack example](icons/example_slack.png)
-
+    ```sh
+    chmod +x post-process.sh
+    helm install runai-event-router . -n runai-monitoring --create-namespace --post-renderer ./post-process.sh
+    ```
